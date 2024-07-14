@@ -68,17 +68,20 @@ public class Main {
         scanner.nextLine();
 
         try {
+            // Kontrollera om boken är tillgänglig
             PreparedStatement checkAvailability = connection.prepareStatement("SELECT status FROM books WHERE id = ?");
             checkAvailability.setInt(1, bookId);
             ResultSet availabilityResult = checkAvailability.executeQuery();
 
+            // Om boken är tillgänglig, låna den
             if (availabilityResult.next() && availabilityResult.getString("status").equals("Available")) {
                 PreparedStatement borrowBook = connection.prepareStatement("UPDATE books SET status = 'Not Available' WHERE id = ?");
                 borrowBook.setInt(1, bookId);
                 borrowBook.executeUpdate();
 
+                // Sätt lånedatum och förfallodatum
                 LocalDate dueDate = LocalDate.now().plusDays(30);
-                LocalDateTime dueDateTime = dueDate.atTime(18, 0); // Setting time to 18:00
+                LocalDateTime dueDateTime = dueDate.atTime(18, 0); // Sätter tiden till 18:00
                 PreparedStatement recordLoan = connection.prepareStatement("INSERT INTO loanlogg (user_id, authors_books_id, start_date, end_date) VALUES (?, ?, NOW(), ?)");
                 recordLoan.setInt(1, loggedInUserId);
                 recordLoan.setInt(2, bookId);
@@ -101,11 +104,13 @@ public class Main {
         scanner.nextLine();
 
         try {
+            // Kontrollera om användaren har lånat boken
             PreparedStatement checkBorrowed = connection.prepareStatement("SELECT * FROM loanlogg WHERE user_id = ? AND authors_books_id = ? AND returned = 0");
             checkBorrowed.setInt(1, loggedInUserId);
             checkBorrowed.setInt(2, bookId);
             ResultSet borrowedResult = checkBorrowed.executeQuery();
 
+            // Om boken är lånad, lämna tillbaka den
             if (borrowedResult.next()) {
                 PreparedStatement returnBook = connection.prepareStatement("UPDATE books SET status = 'Available' WHERE id = ?");
                 returnBook.setInt(1, bookId);
@@ -125,7 +130,6 @@ public class Main {
         }
     }
 
-
     // Lånar ett magasin
     public void borrowMedia(Connection connection, Scanner scanner) {
         System.out.print("Ange media_id för den media du vill låna: ");
@@ -133,17 +137,20 @@ public class Main {
         scanner.nextLine();
 
         try {
+            // Kontrollera om magasinet är tillgängligt
             PreparedStatement checkAvailability = connection.prepareStatement("SELECT status FROM magazines WHERE id = ?");
             checkAvailability.setInt(1, mediaId);
             ResultSet availabilityResult = checkAvailability.executeQuery();
 
+            // Om magasinet är tillgängligt, låna det
             if (availabilityResult.next() && availabilityResult.getString("status").equals("Available")) {
                 PreparedStatement borrowMedia = connection.prepareStatement("UPDATE magazines SET status = 'Not Available' WHERE id = ?");
                 borrowMedia.setInt(1, mediaId);
                 borrowMedia.executeUpdate();
 
+                // Sätt lånedatum och förfallodatum
                 LocalDate dueDate = LocalDate.now().plusDays(10);
-                LocalDateTime dueDateTime = dueDate.atTime(18, 0); // Setting time to 18:00
+                LocalDateTime dueDateTime = dueDate.atTime(18, 0); // Sätter tiden till 18:00
                 PreparedStatement recordLoan = connection.prepareStatement("INSERT INTO loanlogg (user_id, magazine_id, start_date, end_date) VALUES (?, ?, NOW(), ?)");
                 recordLoan.setInt(1, loggedInUserId);
                 recordLoan.setInt(2, mediaId);
@@ -166,11 +173,13 @@ public class Main {
         scanner.nextLine();
 
         try {
+            // Kontrollera om användaren har lånat magasinet
             PreparedStatement checkBorrowed = connection.prepareStatement("SELECT * FROM loanlogg WHERE user_id = ? AND magazine_id = ? AND returned = 0");
             checkBorrowed.setInt(1, loggedInUserId);
             checkBorrowed.setInt(2, mediaId);
             ResultSet borrowedResult = checkBorrowed.executeQuery();
 
+            // Om magasinet är lånat, lämna tillbaka det
             if (borrowedResult.next()) {
                 PreparedStatement returnMedia = connection.prepareStatement("UPDATE magazines SET status = 'Available' WHERE id = ?");
                 returnMedia.setInt(1, mediaId);
@@ -283,9 +292,11 @@ public class Main {
             Database.printSQLException(e);
         }
     }
+
     // Visar lånehistorik för böcker
     public void viewBorrowedBooks(Connection connection) {
         try {
+            // SQL-fråga för att hämta lånehistorik för böcker
             String sql = "SELECT books.title AS item_title, loanlogg.start_date, loanlogg.end_date, loanlogg.returned " +
                     "FROM books " +
                     "JOIN loanlogg ON books.id = loanlogg.authors_books_id " +
@@ -316,6 +327,7 @@ public class Main {
     // Visar lånade magasin
     public void viewBorrowedMedia(Connection connection) {
         try {
+            // SQL-fråga för att hämta lånehistorik för magasin
             String sql = "SELECT magazines.name AS item_title, loanlogg.start_date, loanlogg.end_date, loanlogg.returned " +
                     "FROM magazines " +
                     "JOIN loanlogg ON magazines.id = loanlogg.magazine_id " +

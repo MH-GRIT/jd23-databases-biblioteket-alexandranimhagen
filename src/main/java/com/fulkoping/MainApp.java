@@ -20,26 +20,34 @@ public class MainApp extends Application {
     private static Main mainInstance = new Main();
 
     public static void main(String[] args) {
+        // Startar JavaFX-applikationen
         launch(args);
     }
 
     @Override
     public void start(Stage primaryStage) {
+        // Sätter titeln på huvudfönstret
         primaryStage.setTitle("Biblioteket");
 
         VBox root = new VBox(20);
         root.setPadding(new Insets(20));
         root.setAlignment(Pos.CENTER);
 
+        // Välkomstmeddelande
         Label welcomeLabel = new Label("Välkommen till Fulköpings bibliotek!");
         welcomeLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
 
+        // Knapp för inloggning
         Button loginButton = new Button("Logga in");
+        // Knapp för registrering
         Button registerButton = new Button("Registrera ny användare");
 
+        // Sätt händelsehanterare för registreringsknappen
         registerButton.setOnAction(e -> showRegisterDialog());
+        // Sätt händelsehanterare för inloggningsknappen
         loginButton.setOnAction(e -> showLoginDialog());
 
+        // Lägg till alla komponenter i root-layouten
         root.getChildren().addAll(welcomeLabel, registerButton, loginButton);
 
         Scene scene = new Scene(root);
@@ -49,20 +57,26 @@ public class MainApp extends Application {
     }
 
     private void showRegisterDialog() {
+        // Skapar ett nytt fönster för registrering
         Stage dialog = new Stage();
         dialog.setTitle("Registrera ny användare");
 
         VBox dialogVBox = new VBox(10);
         dialogVBox.setPadding(new Insets(10));
 
+        // Textfält för namn
         TextField nameField = new TextField();
         nameField.setPromptText("Namn");
+        // Textfält för e-post
         TextField emailField = new TextField();
         emailField.setPromptText("E-post");
+        // Textfält för lösenord
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("Lösenord");
+        // Knapp för att registrera användare
         Button registerButton = new Button("Registrera");
 
+        // Sätt händelsehanterare för registreringsknappen
         registerButton.setOnAction(e -> {
             String name = nameField.getText();
             String email = emailField.getText();
@@ -71,6 +85,7 @@ public class MainApp extends Application {
             dialog.close();
         });
 
+        // Lägg till alla komponenter i dialoglayouten
         dialogVBox.getChildren().addAll(nameField, emailField, passwordField, registerButton);
 
         Scene dialogScene = new Scene(dialogVBox, 300, 200);
@@ -79,18 +94,23 @@ public class MainApp extends Application {
     }
 
     private void showLoginDialog() {
+        // Skapar ett nytt fönster för inloggning
         Stage dialog = new Stage();
         dialog.setTitle("Logga in");
 
         VBox dialogVBox = new VBox(10);
         dialogVBox.setPadding(new Insets(10));
 
+        // Textfält för e-post
         TextField emailField = new TextField();
         emailField.setPromptText("E-post");
+        // Textfält för lösenord
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("Lösenord");
+        // Knapp för att logga in
         Button loginButton = new Button("Logga in");
 
+        // Sätt händelsehanterare för inloggningsknappen
         loginButton.setOnAction(e -> {
             String email = emailField.getText();
             String password = passwordField.getText();
@@ -98,6 +118,7 @@ public class MainApp extends Application {
             dialog.close();
         });
 
+        // Lägg till alla komponenter i dialoglayouten
         dialogVBox.getChildren().addAll(emailField, passwordField, loginButton);
 
         Scene dialogScene = new Scene(dialogVBox, 300, 200);
@@ -106,6 +127,7 @@ public class MainApp extends Application {
     }
 
     private void registerUser(String name, String email, String password) {
+        // Ansluter till databasen
         Connection connection = Database.getConnection();
         if (connection == null) {
             showAlert(Alert.AlertType.ERROR, "Database Error", "Kunde inte ansluta till databasen");
@@ -113,13 +135,16 @@ public class MainApp extends Application {
         }
 
         try {
+            // Förbereder SQL-fråga för att lägga till ny användare
             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO users (name, email, hashed_password) VALUES (?, ?, ?)", java.sql.Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setString(1, name);
             preparedStatement.setString(2, email);
             preparedStatement.setString(3, password);
 
+            // Kör SQL-frågan
             int affectedRows = preparedStatement.executeUpdate();
             if (affectedRows > 0) {
+                // Får det genererade användar-ID:t
                 ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
                 if (generatedKeys.next()) {
                     showAlert(Alert.AlertType.INFORMATION, "Success", "Ny användare registrerad med användar-ID: " + generatedKeys.getInt(1));
@@ -132,6 +157,7 @@ public class MainApp extends Application {
     }
 
     private void logInUser(String email, String password) {
+        // Ansluter till databasen
         Connection connection = Database.getConnection();
         if (connection == null) {
             showAlert(Alert.AlertType.ERROR, "Database Error", "Kunde inte ansluta till databasen");
@@ -139,12 +165,14 @@ public class MainApp extends Application {
         }
 
         try {
+            // Förbereder SQL-fråga för att kontrollera inloggningsuppgifter
             PreparedStatement preparedStatement = connection.prepareStatement("SELECT id FROM users WHERE email = ? AND hashed_password = ?");
             preparedStatement.setString(1, email);
             preparedStatement.setString(2, password);
             ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
+                // Sätter inloggad användar-ID
                 mainInstance.setLoggedInUserId(resultSet.getInt("id"));
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Inloggning lyckades. Användare inloggad med ID: " + mainInstance.getLoggedInUserId());
                 showDashboard();
@@ -157,6 +185,7 @@ public class MainApp extends Application {
     }
 
     private void showDashboard() {
+        // Skapar ett nytt fönster för dashboard
         Stage dashboardStage = new Stage();
         dashboardStage.setTitle("Dashboard");
 
@@ -166,15 +195,24 @@ public class MainApp extends Application {
 
         Scene scene = new Scene(root, 400, 300);
 
+        // Knapp för att visa böcker
         Button listBooksButton = new Button("Visa lista över böcker");
+        // Knapp för att visa magasin
         Button listMagazinesButton = new Button("Visa lista över magasin");
+        // Knapp för att låna med ID
         Button borrowButton = new Button("Låna med ID");
+        // Knapp för att lämna tillbaka med ID
         Button returnItemButton = new Button("Lämna tillbaka med ID");
+        // Knapp för att visa aktuella lån
         Button currentLoansButton = new Button("Mina aktuella lån");
+        // Knapp för att visa lånehistorik
         Button loanHistoryButton = new Button("Lånehistorik");
+        // Knapp för att uppdatera profil
         Button updateProfileButton = new Button("Uppdatera profil");
+        // Knapp för att logga ut
         Button logOutButton = new Button("Logga ut");
 
+        // Sätt bredden på knapparna
         listBooksButton.setMinWidth(200);
         listMagazinesButton.setMinWidth(200);
         borrowButton.setMinWidth(200);
@@ -184,6 +222,7 @@ public class MainApp extends Application {
         updateProfileButton.setMinWidth(200);
         logOutButton.setMinWidth(200);
 
+        // Sätt händelsehanterare för alla knappar
         listBooksButton.setOnAction(e -> showBookListDialog());
         listMagazinesButton.setOnAction(e -> showMagazineListDialog());
         borrowButton.setOnAction(e -> showBorrowDialog());
@@ -196,6 +235,7 @@ public class MainApp extends Application {
             dashboardStage.close();
         });
 
+        // Lägg till alla knappar i root-layouten
         root.getChildren().addAll(listBooksButton, listMagazinesButton, borrowButton, returnItemButton, currentLoansButton, loanHistoryButton, updateProfileButton, logOutButton);
 
         dashboardStage.setScene(scene);
@@ -204,6 +244,7 @@ public class MainApp extends Application {
     }
 
     private void showAlert(Alert.AlertType alertType, String title, String message) {
+        // Visar en varning eller information
         Alert alert = new Alert(alertType);
         alert.setTitle(title);
         alert.setHeaderText(null);
@@ -212,15 +253,18 @@ public class MainApp extends Application {
     }
 
     private void showBookListDialog() {
+        // Skapar ett nytt fönster för boklistan
         Stage dialog = new Stage();
         dialog.setTitle("Lista över böcker");
 
         VBox dialogVBox = new VBox(10);
         dialogVBox.setPadding(new Insets(10));
 
+        // Textfält för att söka böcker
         TextField searchField = new TextField();
         searchField.setPromptText("Sök böcker...");
 
+        // Lista över böcker
         ListView<String> bookListView = new ListView<>();
         ObservableList<String> items = FXCollections.observableArrayList();
 
@@ -231,12 +275,14 @@ public class MainApp extends Application {
         }
 
         try {
+            // Förbereder SQL-fråga för att hämta böcker
             String sql = "SELECT books.id, books.title, authors.firstname, authors.lastname, books.status " +
                     "FROM books " +
                     "JOIN authors ON books.author_id = authors.id";
             Statement statement = connection.createStatement();
             ResultSet rs = statement.executeQuery(sql);
             while (rs.next()) {
+                // Lägg till varje bok i listan
                 String bookDetails = "ID: " + rs.getString("id") + ", Titel: " + rs.getString("title") +
                         ", Författare: " + rs.getString("firstname") + " " + rs.getString("lastname") +
                         ", Status: " + (rs.getString("status").equals("Available") ? "Tillgänglig" : "Inte tillgänglig");
@@ -248,9 +294,12 @@ public class MainApp extends Application {
 
         bookListView.setItems(items);
 
+        // Knapp för att låna en bok
         Button borrowButton = new Button("Låna");
+        // Knapp för att stänga fönstret
         Button closeButton = new Button("Återgå");
 
+        // Sätt händelsehanterare för låneknappen
         borrowButton.setOnAction(e -> {
             String selectedItem = bookListView.getSelectionModel().getSelectedItem();
             if (selectedItem != null) {
@@ -259,8 +308,10 @@ public class MainApp extends Application {
             }
         });
 
+        // Sätt händelsehanterare för stängningsknappen
         closeButton.setOnAction(e -> dialog.close());
 
+        // Sätt lyssnare för sökfältet för att filtrera böcker
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             ObservableList<String> filteredItems = FXCollections.observableArrayList();
             for (String item : items) {
@@ -279,15 +330,18 @@ public class MainApp extends Application {
     }
 
     private void showMagazineListDialog() {
+        // Skapar ett nytt fönster för magasinlistan
         Stage dialog = new Stage();
         dialog.setTitle("Lista över magasin");
 
         VBox dialogVBox = new VBox(10);
         dialogVBox.setPadding(new Insets(10));
 
+        // Textfält för att söka magasin
         TextField searchField = new TextField();
         searchField.setPromptText("Sök magasin...");
 
+        // Lista över magasin
         ListView<String> magazineListView = new ListView<>();
         ObservableList<String> items = FXCollections.observableArrayList();
 
@@ -298,10 +352,12 @@ public class MainApp extends Application {
         }
 
         try {
+            // Förbereder SQL-fråga för att hämta magasin
             String sql = "SELECT * FROM magazines";
             Statement statement = connection.createStatement();
             ResultSet rs = statement.executeQuery(sql);
             while (rs.next()) {
+                // Lägg till varje magasin i listan
                 String magazineDetails = "ID: " + rs.getString("id") + ", Titel: " + rs.getString("name") +
                         ", Status: " + (rs.getString("status").equals("Available") ? "Tillgänglig" : "Inte tillgänglig");
                 items.add(magazineDetails);
@@ -312,9 +368,12 @@ public class MainApp extends Application {
 
         magazineListView.setItems(items);
 
+        // Knapp för att låna ett magasin
         Button borrowButton = new Button("Låna");
+        // Knapp för att stänga fönstret
         Button closeButton = new Button("Återgå");
 
+        // Sätt händelsehanterare för låneknappen
         borrowButton.setOnAction(e -> {
             String selectedItem = magazineListView.getSelectionModel().getSelectedItem();
             if (selectedItem != null) {
@@ -323,8 +382,10 @@ public class MainApp extends Application {
             }
         });
 
+        // Sätt händelsehanterare för stängningsknappen
         closeButton.setOnAction(e -> dialog.close());
 
+        // Sätt lyssnare för sökfältet för att filtrera magasin
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             ObservableList<String> filteredItems = FXCollections.observableArrayList();
             for (String item : items) {
@@ -343,6 +404,7 @@ public class MainApp extends Application {
     }
 
     private void showBorrowDialog() {
+        // Skapar en dialog för att låna med ID
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Låna");
         dialog.setHeaderText("Låna en bok eller magasin");
@@ -367,6 +429,7 @@ public class MainApp extends Application {
     }
 
     private void showReturnDialog() {
+        // Skapar en dialog för att lämna tillbaka med ID
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Lämna tillbaka");
         dialog.setHeaderText("Lämna tillbaka en bok eller magasin");
@@ -391,6 +454,7 @@ public class MainApp extends Application {
     }
 
     private boolean isBook(Connection connection, String id) {
+        // Kollar om ID tillhör en bok
         try {
             PreparedStatement ps = connection.prepareStatement("SELECT COUNT(*) FROM books WHERE id = ?");
             ps.setInt(1, Integer.parseInt(id));
@@ -405,6 +469,7 @@ public class MainApp extends Application {
     }
 
     private boolean isMagazine(Connection connection, String id) {
+        // Kollar om ID tillhör ett magasin
         try {
             PreparedStatement ps = connection.prepareStatement("SELECT COUNT(*) FROM magazines WHERE id = ?");
             ps.setInt(1, Integer.parseInt(id));
@@ -419,6 +484,7 @@ public class MainApp extends Application {
     }
 
     private void borrowBookWithId(Connection connection, String bookId) {
+        // Lånar en bok med ID
         try {
             PreparedStatement checkAvailability = connection.prepareStatement("SELECT status FROM books WHERE id = ?");
             checkAvailability.setInt(1, Integer.parseInt(bookId));
@@ -446,6 +512,7 @@ public class MainApp extends Application {
     }
 
     private void borrowMediaWithId(Connection connection, String mediaId) {
+        // Lånar ett magasin med ID
         try {
             PreparedStatement checkAvailability = connection.prepareStatement("SELECT status FROM magazines WHERE id = ?");
             checkAvailability.setInt(1, Integer.parseInt(mediaId));
@@ -473,6 +540,7 @@ public class MainApp extends Application {
     }
 
     private void returnBookWithId(Connection connection, String bookId) {
+        // Lämnar tillbaka en bok med ID
         try {
             PreparedStatement checkBorrowed = connection.prepareStatement("SELECT * FROM loanlogg WHERE user_id = ? AND authors_books_id = ? AND returned = 0");
             checkBorrowed.setInt(1, mainInstance.getLoggedInUserId());
@@ -499,6 +567,7 @@ public class MainApp extends Application {
     }
 
     private void returnMediaWithId(Connection connection, String mediaId) {
+        // Lämnar tillbaka ett magasin med ID
         try {
             PreparedStatement checkBorrowed = connection.prepareStatement("SELECT * FROM loanlogg WHERE user_id = ? AND magazine_id = ? AND returned = 0");
             checkBorrowed.setInt(1, mainInstance.getLoggedInUserId());
@@ -524,14 +593,15 @@ public class MainApp extends Application {
         }
     }
 
-
     private void viewLoanStatus(Connection connection) {
+        // Skapar ett nytt fönster för att visa aktuella lån
         Stage dialog = new Stage();
         dialog.setTitle("Mina aktuella lån");
 
         VBox dialogVBox = new VBox(10);
         dialogVBox.setPadding(new Insets(10));
 
+        // Lista över aktuella lån
         ListView<String> loanListView = new ListView<>();
         ObservableList<String> items = FXCollections.observableArrayList();
 
@@ -539,6 +609,7 @@ public class MainApp extends Application {
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
         try {
+            // Förbereder SQL-fråga för att hämta aktuella lånade böcker
             String sqlBooks = "SELECT books.id, books.title AS item_title, loanlogg.start_date, loanlogg.end_date " +
                     "FROM books " +
                     "JOIN loanlogg ON books.id = loanlogg.authors_books_id " +
@@ -550,6 +621,7 @@ public class MainApp extends Application {
             ResultSet resultSetBooks = preparedStatementBooks.executeQuery();
 
             while (resultSetBooks.next()) {
+                // Lägg till varje lånad bok i listan
                 LocalDateTime startDateTime = resultSetBooks.getTimestamp("start_date").toLocalDateTime();
                 String startDateFormatted = startDateTime.toLocalDate().format(dateFormatter) + " " + startDateTime.toLocalTime().truncatedTo(ChronoUnit.MINUTES).format(timeFormatter);
 
@@ -563,6 +635,7 @@ public class MainApp extends Application {
                 items.add(loanDetails);
             }
 
+            // Förbereder SQL-fråga för att hämta aktuella lånade magasin
             String sqlMagazines = "SELECT magazines.id, magazines.name AS item_title, loanlogg.start_date, loanlogg.end_date " +
                     "FROM magazines " +
                     "JOIN loanlogg ON magazines.id = loanlogg.magazine_id " +
@@ -574,6 +647,7 @@ public class MainApp extends Application {
             ResultSet resultSetMagazines = preparedStatementMagazines.executeQuery();
 
             while (resultSetMagazines.next()) {
+                // Lägg till varje lånat magasin i listan
                 LocalDateTime startDateTime = resultSetMagazines.getTimestamp("start_date").toLocalDateTime();
                 String startDateFormatted = startDateTime.toLocalDate().format(dateFormatter) + " " + startDateTime.toLocalTime().truncatedTo(ChronoUnit.MINUTES).format(timeFormatter);
 
@@ -592,6 +666,7 @@ public class MainApp extends Application {
 
         loanListView.setItems(items);
 
+        // Knapp för att lämna tillbaka ett objekt
         Button returnButton = new Button("Lämna tillbaka");
         returnButton.setOnAction(e -> {
             String selectedItem = loanListView.getSelectionModel().getSelectedItem();
@@ -606,6 +681,7 @@ public class MainApp extends Application {
             }
         });
 
+        // Knapp för att stänga fönstret
         Button closeButton = new Button("Återgå");
         closeButton.setOnAction(e -> dialog.close());
 
@@ -617,12 +693,14 @@ public class MainApp extends Application {
     }
 
     private void viewLoanHistory(Connection connection) {
+        // Skapar ett nytt fönster för att visa lånehistorik
         Stage dialog = new Stage();
         dialog.setTitle("Lånehistorik");
 
         VBox dialogVBox = new VBox(10);
         dialogVBox.setPadding(new Insets(10));
 
+        // Lista över lånehistorik
         ListView<String> loanListView = new ListView<>();
         ObservableList<String> items = FXCollections.observableArrayList();
 
@@ -630,6 +708,7 @@ public class MainApp extends Application {
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
         try {
+            // Förbereder SQL-fråga för att hämta lånade böcker i historiken
             String sqlBooks = "SELECT books.id, books.title AS item_title, loanlogg.start_date, loanlogg.end_date " +
                     "FROM books " +
                     "JOIN loanlogg ON books.id = loanlogg.authors_books_id " +
@@ -641,6 +720,7 @@ public class MainApp extends Application {
             ResultSet resultSetBooks = preparedStatementBooks.executeQuery();
 
             while (resultSetBooks.next()) {
+                // Lägg till varje lånad bok i historiken
                 LocalDateTime startDateTime = resultSetBooks.getTimestamp("start_date").toLocalDateTime();
                 String startDateFormatted = startDateTime.toLocalDate().format(dateFormatter) + " " + startDateTime.toLocalTime().truncatedTo(ChronoUnit.MINUTES).format(timeFormatter);
 
@@ -654,6 +734,7 @@ public class MainApp extends Application {
                 items.add(loanDetails);
             }
 
+            // Förbereder SQL-fråga för att hämta lånade magasin i historiken
             String sqlMagazines = "SELECT magazines.id, magazines.name AS item_title, loanlogg.start_date, loanlogg.end_date " +
                     "FROM magazines " +
                     "JOIN loanlogg ON magazines.id = loanlogg.magazine_id " +
@@ -665,6 +746,7 @@ public class MainApp extends Application {
             ResultSet resultSetMagazines = preparedStatementMagazines.executeQuery();
 
             while (resultSetMagazines.next()) {
+                // Lägg till varje lånat magasin i historiken
                 LocalDateTime startDateTime = resultSetMagazines.getTimestamp("start_date").toLocalDateTime();
                 String startDateFormatted = startDateTime.toLocalDate().format(dateFormatter) + " " + startDateTime.toLocalTime().truncatedTo(ChronoUnit.MINUTES).format(timeFormatter);
 
@@ -683,6 +765,7 @@ public class MainApp extends Application {
 
         loanListView.setItems(items);
 
+        // Knapp för att stänga fönstret
         Button closeButton = new Button("Återgå");
         closeButton.setOnAction(e -> dialog.close());
 
@@ -694,6 +777,7 @@ public class MainApp extends Application {
     }
 
     private void updateProfile(Connection connection) {
+        // Skapar en dialog för att uppdatera profil
         ChoiceDialog<String> dialog = new ChoiceDialog<>("Namn", "Namn", "Lösenord", "E-post");
         dialog.setTitle("Uppdatera din profil");
         dialog.setHeaderText("Uppdatera din profil");
@@ -718,6 +802,7 @@ public class MainApp extends Application {
     }
 
     private void updateName(Connection connection) {
+        // Skapar en dialog för att uppdatera namn
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Uppdatera namn");
         dialog.setHeaderText("Uppdatera namn");
@@ -743,6 +828,7 @@ public class MainApp extends Application {
     }
 
     private void updatePassword(Connection connection) {
+        // Skapar en dialog för att uppdatera lösenord
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Uppdatera lösenord");
         dialog.setHeaderText("Uppdatera lösenord");
@@ -768,6 +854,7 @@ public class MainApp extends Application {
     }
 
     private void updateEmail(Connection connection) {
+        // Skapar en dialog för att uppdatera e-post
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Uppdatera e-post");
         dialog.setHeaderText("Uppdatera e-post");
@@ -793,6 +880,7 @@ public class MainApp extends Application {
     }
 
     private void logOut() {
+        // Loggar ut användaren
         mainInstance.setLoggedInUserId(-1);
         showAlert(Alert.AlertType.INFORMATION, "Utloggad", "Du har loggats ut.");
     }
