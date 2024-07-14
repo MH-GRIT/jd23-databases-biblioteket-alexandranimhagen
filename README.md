@@ -23,6 +23,6 @@ Riktlinjer för att köra projektet:
 - Konfigurera JavaFX:
 - Lägg till JavaFX SDK som bibliotek.
 - Under körkonfiguration, lägg till VM options: --module-path /path/to/javafx-sdk-16/lib --add-modules javafx.controls,javafx.fxml
-- 
+  
 8. Kör projektet i IDE
 - Högerklicka på MainApp.java och välj Run 'MainApp.main()'.
