@@ -14,6 +14,7 @@
       <option name="minLength" value="705" />
     </inspection_tool>
     <inspection_tool class="FieldMayBeFinal" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="SqlRedundantOrderingDirectionInspection" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="StringOperationCanBeSimplified" enabled="true" level="INFORMATION" enabled_by_default="true" />
     <inspection_tool class="ThrowablePrintStackTrace" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="UnusedAssignment" enabled="true" level="INFORMATION" enabled_by_default="true">

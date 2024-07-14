@@ -125,6 +125,7 @@ public class Main {
         }
     }
 
+
     // Lånar ett magasin
     public void borrowMedia(Connection connection, Scanner scanner) {
         System.out.print("Ange media_id för den media du vill låna: ");
@@ -282,33 +283,30 @@ public class Main {
             Database.printSQLException(e);
         }
     }
-
-    // Visar lånade böcker
+    // Visar lånehistorik för böcker
     public void viewBorrowedBooks(Connection connection) {
         try {
-            String sql = "SELECT books.title AS item_title, loanlogg.start_date, loanlogg.end_date " +
+            String sql = "SELECT books.title AS item_title, loanlogg.start_date, loanlogg.end_date, loanlogg.returned " +
                     "FROM books " +
                     "JOIN loanlogg ON books.id = loanlogg.authors_books_id " +
-                    "WHERE loanlogg.user_id = ? AND loanlogg.returned = 0";
+                    "WHERE loanlogg.user_id = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setInt(1, loggedInUserId);
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
-            if (resultSet.next()) {
-                System.out.println("Dina lånade böcker:");
-                do {
-                    String title = resultSet.getString("item_title");
-                    String loanDate = resultSet.getString("start_date");
-                    String dueDate = resultSet.getString("end_date");
+            System.out.println("Dina lånade böcker:");
+            while (resultSet.next()) {
+                String title = resultSet.getString("item_title");
+                String loanDate = resultSet.getString("start_date");
+                String dueDate = resultSet.getString("end_date");
+                boolean returned = resultSet.getBoolean("returned");
 
-                    System.out.println("Titel: " + title);
-                    System.out.println("Lånedatum: " + loanDate);
-                    System.out.println("Förfallodatum: " + dueDate);
-                    System.out.println();
-                } while (resultSet.next());
-            } else {
-                System.out.println("Du har inga lånade böcker för närvarande.");
+                System.out.println("Titel: " + title);
+                System.out.println("Lånedatum: " + loanDate);
+                System.out.println("Förfallodatum: " + dueDate);
+                System.out.println("Återlämnad: " + (returned ? "Ja" : "Nej"));
+                System.out.println();
             }
         } catch (SQLException e) {
             Database.printSQLException(e);
@@ -318,10 +316,10 @@ public class Main {
     // Visar lånade magasin
     public void viewBorrowedMedia(Connection connection) {
         try {
-            String sql = "SELECT magazines.name AS item_title, loanlogg.start_date, loanlogg.end_date " +
+            String sql = "SELECT magazines.name AS item_title, loanlogg.start_date, loanlogg.end_date, loanlogg.returned " +
                     "FROM magazines " +
                     "JOIN loanlogg ON magazines.id = loanlogg.magazine_id " +
-                    "WHERE loanlogg.user_id = ? AND loanlogg.returned = 0";
+                    "WHERE loanlogg.user_id = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setInt(1, loggedInUserId);
 
@@ -333,10 +331,12 @@ public class Main {
                     String title = resultSet.getString("item_title");
                     String loanDate = resultSet.getString("start_date");
                     String dueDate = resultSet.getString("end_date");
+                    boolean returned = resultSet.getBoolean("returned");
 
                     System.out.println("Titel: " + title);
                     System.out.println("Lånedatum: " + loanDate);
                     System.out.println("Förfallodatum: " + dueDate);
+                    System.out.println("Återlämnad: " + (returned ? "Ja" : "Nej"));
                     System.out.println();
                 } while (resultSet.next());
             } else {

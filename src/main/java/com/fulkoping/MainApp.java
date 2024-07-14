@@ -34,8 +34,8 @@ public class MainApp extends Application {
         Label welcomeLabel = new Label("Välkommen till Fulköpings bibliotek!");
         welcomeLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
 
-        Button registerButton = new Button("Registrera ny användare");
         Button loginButton = new Button("Logga in");
+        Button registerButton = new Button("Registrera ny användare");
 
         registerButton.setOnAction(e -> showRegisterDialog());
         loginButton.setOnAction(e -> showLoginDialog());
@@ -170,7 +170,8 @@ public class MainApp extends Application {
         Button listMagazinesButton = new Button("Visa lista över magasin");
         Button borrowButton = new Button("Låna med ID");
         Button returnItemButton = new Button("Lämna tillbaka med ID");
-        Button loanStatusButton = new Button("Mina lån");
+        Button currentLoansButton = new Button("Mina aktuella lån");
+        Button loanHistoryButton = new Button("Lånehistorik");
         Button updateProfileButton = new Button("Uppdatera profil");
         Button logOutButton = new Button("Logga ut");
 
@@ -178,7 +179,8 @@ public class MainApp extends Application {
         listMagazinesButton.setMinWidth(200);
         borrowButton.setMinWidth(200);
         returnItemButton.setMinWidth(200);
-        loanStatusButton.setMinWidth(200);
+        currentLoansButton.setMinWidth(200);
+        loanHistoryButton.setMinWidth(200);
         updateProfileButton.setMinWidth(200);
         logOutButton.setMinWidth(200);
 
@@ -186,14 +188,15 @@ public class MainApp extends Application {
         listMagazinesButton.setOnAction(e -> showMagazineListDialog());
         borrowButton.setOnAction(e -> showBorrowDialog());
         returnItemButton.setOnAction(e -> showReturnDialog());
-        loanStatusButton.setOnAction(e -> viewLoanStatus(Database.getConnection()));
+        currentLoansButton.setOnAction(e -> viewLoanStatus(Database.getConnection()));
+        loanHistoryButton.setOnAction(e -> viewLoanHistory(Database.getConnection()));
         updateProfileButton.setOnAction(e -> updateProfile(Database.getConnection()));
         logOutButton.setOnAction(e -> {
             logOut();
             dashboardStage.close();
         });
 
-        root.getChildren().addAll(listBooksButton, listMagazinesButton, borrowButton, returnItemButton, loanStatusButton, updateProfileButton, logOutButton);
+        root.getChildren().addAll(listBooksButton, listMagazinesButton, borrowButton, returnItemButton, currentLoansButton, loanHistoryButton, updateProfileButton, logOutButton);
 
         dashboardStage.setScene(scene);
         dashboardStage.setMaximized(true);
@@ -246,7 +249,7 @@ public class MainApp extends Application {
         bookListView.setItems(items);
 
         Button borrowButton = new Button("Låna");
-        Button closeButton = new Button("Avsluta");
+        Button closeButton = new Button("Återgå");
 
         borrowButton.setOnAction(e -> {
             String selectedItem = bookListView.getSelectionModel().getSelectedItem();
@@ -310,7 +313,7 @@ public class MainApp extends Application {
         magazineListView.setItems(items);
 
         Button borrowButton = new Button("Låna");
-        Button closeButton = new Button("Avsluta");
+        Button closeButton = new Button("Återgå");
 
         borrowButton.setOnAction(e -> {
             String selectedItem = magazineListView.getSelectionModel().getSelectedItem();
@@ -342,7 +345,7 @@ public class MainApp extends Application {
     private void showBorrowDialog() {
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Låna");
-        dialog.setHeaderText("Låna en bok eller media");
+        dialog.setHeaderText("Låna en bok eller magasin");
         dialog.setContentText("Ange ID för det du vill låna:");
 
         dialog.showAndWait().ifPresent(id -> {
@@ -366,7 +369,7 @@ public class MainApp extends Application {
     private void showReturnDialog() {
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Lämna tillbaka");
-        dialog.setHeaderText("Lämna tillbaka en bok eller media");
+        dialog.setHeaderText("Lämna tillbaka en bok eller magasin");
         dialog.setContentText("Ange ID för det du vill lämna tillbaka:");
 
         dialog.showAndWait().ifPresent(id -> {
@@ -521,9 +524,10 @@ public class MainApp extends Application {
         }
     }
 
+
     private void viewLoanStatus(Connection connection) {
         Stage dialog = new Stage();
-        dialog.setTitle("Mina lån");
+        dialog.setTitle("Mina aktuella lån");
 
         VBox dialogVBox = new VBox(10);
         dialogVBox.setPadding(new Insets(10));
@@ -538,7 +542,8 @@ public class MainApp extends Application {
             String sqlBooks = "SELECT books.id, books.title AS item_title, loanlogg.start_date, loanlogg.end_date " +
                     "FROM books " +
                     "JOIN loanlogg ON books.id = loanlogg.authors_books_id " +
-                    "WHERE loanlogg.user_id = ? AND loanlogg.returned = 0";
+                    "WHERE loanlogg.user_id = ? AND loanlogg.returned = 0 " +
+                    "ORDER BY loanlogg.end_date ASC";
             PreparedStatement preparedStatementBooks = connection.prepareStatement(sqlBooks);
             preparedStatementBooks.setInt(1, mainInstance.getLoggedInUserId());
 
@@ -561,7 +566,8 @@ public class MainApp extends Application {
             String sqlMagazines = "SELECT magazines.id, magazines.name AS item_title, loanlogg.start_date, loanlogg.end_date " +
                     "FROM magazines " +
                     "JOIN loanlogg ON magazines.id = loanlogg.magazine_id " +
-                    "WHERE loanlogg.user_id = ? AND loanlogg.returned = 0";
+                    "WHERE loanlogg.user_id = ? AND loanlogg.returned = 0 " +
+                    "ORDER BY loanlogg.end_date ASC";
             PreparedStatement preparedStatementMagazines = connection.prepareStatement(sqlMagazines);
             preparedStatementMagazines.setInt(1, mainInstance.getLoggedInUserId());
 
@@ -586,9 +592,6 @@ public class MainApp extends Application {
 
         loanListView.setItems(items);
 
-        Button closeButton = new Button("Återgå");
-        closeButton.setOnAction(e -> dialog.close());
-
         Button returnButton = new Button("Lämna tillbaka");
         returnButton.setOnAction(e -> {
             String selectedItem = loanListView.getSelectionModel().getSelectedItem();
@@ -603,7 +606,87 @@ public class MainApp extends Application {
             }
         });
 
+        Button closeButton = new Button("Återgå");
+        closeButton.setOnAction(e -> dialog.close());
+
         dialogVBox.getChildren().addAll(loanListView, returnButton, closeButton);
+
+        Scene dialogScene = new Scene(dialogVBox, 800, 600);
+        dialog.setScene(dialogScene);
+        dialog.show();
+    }
+
+    private void viewLoanHistory(Connection connection) {
+        Stage dialog = new Stage();
+        dialog.setTitle("Lånehistorik");
+
+        VBox dialogVBox = new VBox(10);
+        dialogVBox.setPadding(new Insets(10));
+
+        ListView<String> loanListView = new ListView<>();
+        ObservableList<String> items = FXCollections.observableArrayList();
+
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+
+        try {
+            String sqlBooks = "SELECT books.id, books.title AS item_title, loanlogg.start_date, loanlogg.end_date " +
+                    "FROM books " +
+                    "JOIN loanlogg ON books.id = loanlogg.authors_books_id " +
+                    "WHERE loanlogg.user_id = ? AND loanlogg.returned = 1 " +
+                    "ORDER BY loanlogg.end_date DESC";
+            PreparedStatement preparedStatementBooks = connection.prepareStatement(sqlBooks);
+            preparedStatementBooks.setInt(1, mainInstance.getLoggedInUserId());
+
+            ResultSet resultSetBooks = preparedStatementBooks.executeQuery();
+
+            while (resultSetBooks.next()) {
+                LocalDateTime startDateTime = resultSetBooks.getTimestamp("start_date").toLocalDateTime();
+                String startDateFormatted = startDateTime.toLocalDate().format(dateFormatter) + " " + startDateTime.toLocalTime().truncatedTo(ChronoUnit.MINUTES).format(timeFormatter);
+
+                LocalDateTime endDateTime = resultSetBooks.getTimestamp("end_date").toLocalDateTime();
+                String endDateFormatted = endDateTime.toLocalDate().format(dateFormatter) + " " + endDateTime.toLocalTime().truncatedTo(ChronoUnit.MINUTES).format(timeFormatter);
+
+                String loanDetails = "Bok: " + resultSetBooks.getString("item_title") +
+                        ", Lånedatum: " + startDateFormatted +
+                        ", Återlämnad: " + endDateFormatted +
+                        ", ID: " + resultSetBooks.getString("id");
+                items.add(loanDetails);
+            }
+
+            String sqlMagazines = "SELECT magazines.id, magazines.name AS item_title, loanlogg.start_date, loanlogg.end_date " +
+                    "FROM magazines " +
+                    "JOIN loanlogg ON magazines.id = loanlogg.magazine_id " +
+                    "WHERE loanlogg.user_id = ? AND loanlogg.returned = 1 " +
+                    "ORDER BY loanlogg.end_date DESC";
+            PreparedStatement preparedStatementMagazines = connection.prepareStatement(sqlMagazines);
+            preparedStatementMagazines.setInt(1, mainInstance.getLoggedInUserId());
+
+            ResultSet resultSetMagazines = preparedStatementMagazines.executeQuery();
+
+            while (resultSetMagazines.next()) {
+                LocalDateTime startDateTime = resultSetMagazines.getTimestamp("start_date").toLocalDateTime();
+                String startDateFormatted = startDateTime.toLocalDate().format(dateFormatter) + " " + startDateTime.toLocalTime().truncatedTo(ChronoUnit.MINUTES).format(timeFormatter);
+
+                LocalDateTime endDateTime = resultSetMagazines.getTimestamp("end_date").toLocalDateTime();
+                String endDateFormatted = endDateTime.toLocalDate().format(dateFormatter) + " " + endDateTime.toLocalTime().truncatedTo(ChronoUnit.MINUTES).format(timeFormatter);
+
+                String loanDetails = "Magasin: " + resultSetMagazines.getString("item_title") +
+                        ", Lånedatum: " + startDateFormatted +
+                        ", Återlämnad: " + endDateFormatted +
+                        ", ID: " + resultSetMagazines.getString("id");
+                items.add(loanDetails);
+            }
+        } catch (SQLException e) {
+            showAlert(Alert.AlertType.ERROR, "SQL Error", e.getMessage());
+        }
+
+        loanListView.setItems(items);
+
+        Button closeButton = new Button("Återgå");
+        closeButton.setOnAction(e -> dialog.close());
+
+        dialogVBox.getChildren().addAll(loanListView, closeButton);
 
         Scene dialogScene = new Scene(dialogVBox, 800, 600);
         dialog.setScene(dialogScene);
